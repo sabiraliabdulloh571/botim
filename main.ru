@@ -1,0 +1,47 @@
+import os
+import threading
+from flask import Flask
+from telegram import Update
+from telegram.ext import Application, MessageHandler, filters, ContextTypes
+
+TOKEN = os.environ.get("BOT_TOKEN")
+
+app_flask = Flask(__name__)
+
+@app_flask.route("/")
+def home():
+    return "Bot ishlayapti!"
+
+async def auto_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.business_message:
+        return
+    msg = update.business_message
+    text = (msg.text or "").lower()
+
+    if "salom" in text or "assalom" in text:
+        javob = "Assalomu alaykum! 👋 Xabaringiz uchun rahmat. Savolingizni yozing, tez orada javob beramiz."
+    elif "narx" in text or "qancha" in text:
+        javob = "Narxlar haqida ma'lumot uchun: hozir batafsil yozaman. Sal kutib turing."
+    elif "manzil" in text or "qayerda" in text:
+        javob = "Manzilimiz: O'sh shahri. Aniq manzil uchun biroz kuting, o'zim yozaman."
+    elif "rahmat" in text:
+        javob = "Arzimaydi! 🤲 Yana murojaat qiling."
+    else:
+        javob = "Xabaringizni oldim! Hozir bandman, tez orada shaxsan o'zim javob beraman. 🙏"
+
+    await context.bot.send_message(
+        chat_id=msg.chat_id,
+        business_connection_id=msg.business_connection_id,
+        text=javob
+    )
+
+def run_bot():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(MessageHandler(filters.ALL, auto_reply))
+    app.run_polling()
+
+threading.Thread(target=run_bot, daemon=True).start()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app_flask.run(host="0.0.0.0", port=port)
